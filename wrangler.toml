@@ -1,4 +1,4 @@
-name = "image-resizing"
+name = "cf-image-resizing-rs"
 type = "javascript"
 workers_dev = true
 compatibility_date = "2021-12-03"

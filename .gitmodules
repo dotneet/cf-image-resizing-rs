@@ -1,0 +1,3 @@
+[submodule "workers-rs"]
+	path = workers-rs
+	url = git@github.com:dotneet/workers-rs.git
