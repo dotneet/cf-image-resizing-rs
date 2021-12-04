@@ -23,7 +23,7 @@ impl ManipulationParams {
             format: "png".to_string(),
         }
     }
-    pub fn apply(&self, bytes: &Vec<u8>) -> Vec<u8> {
+    pub fn apply(&self, bytes: &Vec<u8>) -> Result<Vec<u8>> {
         let img = load_from_memory(&bytes).unwrap();
         let modified_image = img.resize_exact(self.width, self.height, FilterType::Gaussian);
         let mut dst: Vec<u8> = Vec::new();
@@ -32,18 +32,12 @@ impl ManipulationParams {
             _ => ImageOutputFormat::Jpeg(80),
         };
         modified_image.write_to(&mut dst, image_format).unwrap();
-        dst
+        Ok(dst)
     }
 }
 
-fn get_query_params_map(url: Url) -> Result<HashMap<String, String>> {
-    let mut params: HashMap<String, String> = HashMap::new();
-    for val in url.query_pairs() {
-        let key = val.0.to_string();
-        let value = val.1.to_string();
-        params.insert(key, value);
-    }
-    return Ok(params);
+fn get_query_params(url: Url) -> Result<HashMap<String, String>> {
+    Ok(url.query_pairs().into_owned().collect())
 }
 
 fn extract_manipulation_params(params: &HashMap<String, String>) -> Result<ManipulationParams> {
@@ -65,10 +59,10 @@ fn extract_manipulation_params(params: &HashMap<String, String>) -> Result<Manip
     Ok(options)
 }
 
-async fn fetch_image(src: &str) -> Vec<u8> {
+async fn fetch_image(src: &str) -> Result<Vec<u8>> {
     let request = Request::new(src, Method::Get);
-    let response = Fetch::Request(request.unwrap()).send().await;
-    response.unwrap().bytes().await.unwrap()
+    let response = Fetch::Request(request?).send().await;
+    response.unwrap().bytes().await
 }
 
 #[event(fetch)]
@@ -78,13 +72,12 @@ pub async fn main(req: Request, env: Env) -> Result<Response> {
     let router = Router::new();
     router
         .get_async("/", |req, _| async move {
-            let query_params = get_query_params_map(req.url().unwrap()).unwrap();
-            let src = query_params.get("src").unwrap();
-            let manipulation = extract_manipulation_params(&query_params).unwrap();
+            let query_params = get_query_params(req.url()?)?;
+            let src = query_params.get("src").ok_or("error".to_owned())?;
+            let manipulation = extract_manipulation_params(&query_params)?;
 
-            // 画像取得と画像編集の実施
-            let image_input = fetch_image(src).await;
-            let image_output = manipulation.apply(&image_input);
+            let image_input = fetch_image(src).await?;
+            let image_output = manipulation.apply(&image_input)?;
 
             let response = Response::from_bytes(image_output)?;
             let mut headers = Headers::new();
