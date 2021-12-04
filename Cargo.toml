@@ -13,6 +13,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 cfg-if = "0.1.2"
 futures = "0.3.16"
+hex = "0.4.1"
 worker = { path = "workers-rs/worker", version = "0.0.7" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
