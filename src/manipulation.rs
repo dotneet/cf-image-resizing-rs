@@ -5,37 +5,31 @@ use image::*;
 use worker::*;
 
 #[derive(Debug, Copy, Clone)]
-struct ImageSize {
-    width: u32,
-    height: u32,
+pub struct ImageSize {
+    pub width: u32,
+    pub height: u32,
 }
 
 impl ImageSize {
     pub fn new(width: u32, height: u32) -> Self {
-        ImageSize {
-            width: width,
-            height: height,
-        }
+        ImageSize { width, height }
     }
 }
 
-pub struct ManipulationParams {
-    size: Option<ImageSize>,
+pub struct ManipulationDefinition {
+    pub size: Option<ImageSize>,
     pub format: String,
 }
 
-impl ManipulationParams {
+impl ManipulationDefinition {
     fn new() -> Self {
-        Self::with_data()
-    }
-    fn with_data() -> Self {
         Self {
             size: None,
             format: "png".to_string(),
         }
     }
     pub fn from_hash_map(params: &HashMap<String, String>) -> Self {
-        let mut result = ManipulationParams::new();
+        let mut result = ManipulationDefinition::new();
         let width = match params.get("w") {
             Some(v) => v.parse::<u32>().unwrap_or(0),
             None => 0,
@@ -54,8 +48,8 @@ impl ManipulationParams {
         result
     }
 
-    pub fn apply(&self, bytes: &Vec<u8>) -> Result<Vec<u8>> {
-        let img = load_from_memory(&bytes).unwrap();
+    pub fn modify_image(&self, bytes: &Vec<u8>) -> Result<Vec<u8>> {
+        let img = load_from_memory(&bytes).expect("Failed to load an image from a byte slice.");
         let size = self.size.ok_or("no size")?;
         let modified_image = img.resize_exact(size.width, size.height, FilterType::Gaussian);
         let mut dst: Vec<u8> = Vec::new();

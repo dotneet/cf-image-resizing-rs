@@ -25,11 +25,11 @@ pub async fn main(req: Request, env: Env) -> Result<Response> {
     router
         .get_async("/", |req, _| async move {
             let query_params = get_query_params(req.url()?)?;
-            let src = query_params.get("src").ok_or("error".to_owned())?;
-            let manipulation = ManipulationParams::from_hash_map(&query_params);
+            let src = query_params.get("src").ok_or("error")?;
+            let manipulation = ManipulationDefinition::from_hash_map(&query_params);
 
             let image_input = fetch_image(src).await?;
-            let image_output = manipulation.apply(&image_input)?;
+            let image_output = manipulation.modify_image(&image_input)?;
 
             let response = Response::from_bytes(image_output)?;
             let mut headers = Headers::new();
